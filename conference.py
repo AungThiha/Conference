@@ -88,6 +88,11 @@ SESSION_GET_BY_SPEAKER_REQUEST = endpoints.ResourceContainer(
     speaker=messages.StringField(1),
 )
 
+WISHLIST_POST_REQUEST = endpoints.ResourceContainer(
+    message_types.VoidMessage,
+    websafeSessionKey=messages.StringField(1, required=True),
+)
+
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -541,16 +546,18 @@ class ConferenceApi(remote.Service):
         # check if conf exists given websafeConfKey
         # get conference; check that it exists
         wsck = request.websafeConferenceKey
-        conf = ndb.Key(urlsafe=wsck).get()
+        c_key = ndb.Key(urlsafe=wsck)
+        conf = c_key.get()
         if not conf:
             raise endpoints.NotFoundException(
                 'No conference found with key: %s' % wsck)
 
         # create ancestor query for all key matches for this conference
-        sessions = Session.query(ancestor=ndb.Key(Conference, conf.key.id()))
+        sessions = Session.query(ancestor=c_key)
+        print c_key.id()
 
         # return set of SessionForm objects per Session
-        return SessionForms(items=[self._copySessionToForm(s) for s in sessions])
+        return SessionForms(items=[self._copySessionToForm(session) for session in sessions])
 
     @endpoints.method(SESSION_GET_REQUEST, SessionForms,
                       path='conference/{websafeConferenceKey}/sessions/{typeOfSession}',
@@ -560,7 +567,8 @@ class ConferenceApi(remote.Service):
         # check if conf exists given websafeConfKey
         # get conference; check that it exists
         wsck = request.websafeConferenceKey
-        conf = ndb.Key(urlsafe=wsck).get()
+        c_key = ndb.Key(urlsafe=wsck)
+        conf = c_key.get()
         if not conf:
             raise endpoints.NotFoundException(
                 'No conference found with key: %s' % wsck)
@@ -569,8 +577,8 @@ class ConferenceApi(remote.Service):
         typeOfSession = request.typeOfSession
 
         # create ancestor query for all key matches for this conference and this type type of session
-        sessions = Session.query().filter(Session.typeOfSession == typeOfSession,
-                                          Session.websafeConferenceKey == wsck)
+        sessions = Session.query(ancestor=c_key)\
+            .filter(Session.typeOfSession == typeOfSession)
 
         # return set of SessionForm objects per Session
         return SessionForms(items=[self._copySessionToForm(session) for session in sessions])
@@ -633,11 +641,83 @@ class ConferenceApi(remote.Service):
         return request
 
     @endpoints.method(SessionForm, SessionForm,
-                      path='createSession',
+                      path='sessions',
                       http_method='POST', name='createSession')
     def createSession(self, request):
         """Create new session."""
         return self._createSessionObject(request)
+
+    def _sessionInWishlist(self, request, add=True):
+        """add or delete session for user's wishlist."""
+        retval = False
+        # preload necessary data items
+        user = endpoints.get_current_user()
+        if not user:
+            raise endpoints.UnauthorizedException('Authorization required')
+
+        # check if session exists given websafeSessionKey
+        # get session; check that it exists
+        wssk = request.websafeSessionKey
+        s_key = ndb.Key(urlsafe=wssk)
+        session = s_key.get()
+        if not session:
+            raise endpoints.NotFoundException(
+                'No session found with key: %s' % wssk)
+
+        prof = self._getProfileFromUser()  # get user Profile
+
+        if add:
+            # check if the user already added the session to wishlist
+            if wssk in prof.sessionKeysInWishlist:
+                raise endpoints.BadRequestException(
+                    'You have already added this session to your Whishlist')
+            else:
+                # append the session key to user's sessionInWishlist
+                prof.sessionKeysInWishlist.append(wssk)
+                retval = True
+        elif wssk in prof.sessionKeysInWishlist:
+            # remove the session key to user's sessionInWishlist
+            prof.sessionKeysInWishlist.remove(wssk)
+            retval = True
+
+        # write things back to the datastore & return
+        prof.put()
+
+        return BooleanMessage(data=retval)
+
+    @endpoints.method(WISHLIST_POST_REQUEST, BooleanMessage,
+                      path='wishlist/{websafeSessionKey}',
+                      http_method='POST', name='addSessionToWishlist')
+    def addSessionToWishlist(self, request):
+        """adds the session to the user's list of sessions they are interested in attending"""
+        return self._sessionInWishlist(request)
+
+    @endpoints.method(message_types.VoidMessage, SessionForms,
+                      path='wishlist',
+                      http_method='GET', name='getSessionsInWishlist')
+    def getSessionsInWishlist(self, request):
+        """query for all the sessions in a conference that the user is interested in"""
+        # preload necessary data items
+        user = endpoints.get_current_user()
+        if not user:
+            raise endpoints.UnauthorizedException('Authorization required')
+
+        prof = self._getProfileFromUser()  # get user Profile
+        session_keys = [ndb.Key(urlsafe=wssk) for wssk in prof.sessionKeysInWishlist]
+        sessions = [session_key.get() for session_key in session_keys]
+
+        # return set of SessionForm objects per Session in wishlist
+        return SessionForms(
+            items=[self._copySessionToForm(session) for session in sessions]
+        )
+
+    @endpoints.method(WISHLIST_POST_REQUEST, BooleanMessage,
+                      path='wishlist/{websafeSessionKey}',
+                      http_method='DELETE', name='deleteSessionInWishlist')
+    def deleteSessionInWishlist(self, request):
+        """removes the session from the user's list of sessions
+        they are interested in attending"""
+        return self._sessionInWishlist(request, False)
 
 
 api = endpoints.api_server([ConferenceApi])  # register API
