@@ -16,7 +16,6 @@ from protorpc import messages
 from protorpc import message_types
 from protorpc import remote
 
-from google.appengine.api import memcache
 from google.appengine.api import taskqueue
 from google.appengine.ext import ndb
 from google.appengine.api import memcache
@@ -29,7 +28,6 @@ from models import BooleanMessage
 from models import Conference
 from models import ConferenceForm
 from models import ConferenceForms
-from models import ConferenceQueryForm
 from models import ConferenceQueryForms
 from models import TeeShirtSize
 from models import StringMessage
@@ -614,6 +612,8 @@ class ConferenceApi(remote.Service):
 
         # copy SessionForm/ProtoRPC Message into dict
         data = {field.name: getattr(request, field.name) for field in request.all_fields()}
+        del data['websafeKey']
+        del data['websafeConferenceKey']
 
         # convert date and time from strings to Date objects;
         if data['date']:
@@ -627,7 +627,7 @@ class ConferenceApi(remote.Service):
         s_key = ndb.Key(Session, s_id, parent=c_key)
         data['key'] = s_key
 
-        # creation of Session & return ConferenceForm
+        # creation of Session & return SessionForm
         Session(**data).put()
 
         return request
