@@ -20,7 +20,7 @@ from google.appengine.api import taskqueue
 from google.appengine.ext import ndb
 from google.appengine.api import memcache
 
-from models import ConflictException, Session, SessionForms, SessionForm
+from models import ConflictException, Session, SessionForms, SessionForm, ProfileForms
 from models import Profile
 from models import ProfileMiniForm
 from models import ProfileForm
@@ -86,6 +86,16 @@ SESSION_GET_REQUEST = endpoints.ResourceContainer(
 SESSION_GET_BY_SPEAKER_REQUEST = endpoints.ResourceContainer(
     message_types.VoidMessage,
     speaker=messages.StringField(1),
+)
+
+SESSION_GET_BY_DATE_REQUEST = endpoints.ResourceContainer(
+    message_types.VoidMessage,
+    date=messages.StringField(1),
+)
+
+SESSION_GET_BY_STARTTIME_REQUEST = endpoints.ResourceContainer(
+    message_types.VoidMessage,
+    starttime=messages.StringField(1),
 )
 
 WISHLIST_POST_REQUEST = endpoints.ResourceContainer(
@@ -487,6 +497,27 @@ class ConferenceApi(remote.Service):
         """Unregister user for selected conference."""
         return self._conferenceRegistration(request, reg=False)
 
+    @endpoints.method(CONF_GET_REQUEST, ProfileForms,
+                      path='conference/{websafeConferenceKey}/attenders',
+                      http_method='GET', name='getAttenders')
+    def getAttenders(self, request):
+        """return all attenders of a given conference"""
+        # check if conf exists given websafeConfKey
+        # get conference; check that it exists
+        wsck = request.websafeConferenceKey
+        c_key = ndb.Key(urlsafe=wsck)
+        conf = c_key.get()
+        if not conf:
+            raise endpoints.NotFoundException(
+                'No conference found with key: %s' % wsck)
+
+        # create query for all profiles that has registered for this conference
+        profiles = Profile.query()\
+            .filter(Profile.conferenceKeysToAttend == wsck)
+
+        # return set of ProfileForm objects per Profile
+        return ProfileForms(items=[self._copyProfileToForm(prof) for prof in profiles])
+
     # - - - Announcements - - - - - - - - - - - - - - - - - - - -
 
     @staticmethod
@@ -576,19 +607,39 @@ class ConferenceApi(remote.Service):
         # get type of session
         typeOfSession = request.typeOfSession
 
-        # create ancestor query for all key matches for this conference and this type type of session
-        sessions = Session.query(ancestor=c_key)\
+        # create ancestor query for all key matches for this conference and this of session
+        sessions = Session.query(ancestor=c_key) \
             .filter(Session.typeOfSession == typeOfSession)
 
         # return set of SessionForm objects per Session
         return SessionForms(items=[self._copySessionToForm(session) for session in sessions])
 
     @endpoints.method(SESSION_GET_BY_SPEAKER_REQUEST, SessionForms,
-                      path='/sessions/{speaker}',
+                      path='/sessions/speaker/{speaker}',
                       http_method='GET', name='getSessionsBySpeaker')
     def getSessionsBySpeaker(self, request):
         """return all sessions given by this particular speaker, across all conferences."""
         sessions = Session.query().filter(Session.speaker == request.speaker)
+
+        # return set of SessionForm objects per Session
+        return SessionForms(items=[self._copySessionToForm(session) for session in sessions])
+
+    @endpoints.method(SESSION_GET_BY_DATE_REQUEST, SessionForms,
+                      path='/sessions/date/{date}',
+                      http_method='GET', name='getSessionsByDate')
+    def getSessionsByDate(self, request):
+        """return all sessions given by this particular date, across all conferences."""
+        sessions = Session.query().filter(Session.date == datetime.strptime(request.date[:10], "%Y-%m-%d").date())
+
+        # return set of SessionForm objects per Session
+        return SessionForms(items=[self._copySessionToForm(session) for session in sessions])
+
+    @endpoints.method(SESSION_GET_BY_STARTTIME_REQUEST, SessionForms,
+                      path='/sessions/starttime/{starttime}',
+                      http_method='GET', name='getSessionsByStartTime')
+    def getSessionsByStartTime(self, request):
+        """return all sessions given by this particular date, across all conferences."""
+        sessions = Session.query().filter(Session.startTime < datetime.strptime(request.starttime, "%H:%M").time())
 
         # return set of SessionForm objects per Session
         return SessionForms(items=[self._copySessionToForm(session) for session in sessions])
@@ -627,7 +678,7 @@ class ConferenceApi(remote.Service):
         if data['date']:
             data['date'] = datetime.strptime(data['date'][:10], "%Y-%m-%d").date()
         if data['startTime']:
-            data['startTime'] = datetime.strptime(data['startTime'][:10], "%H, %M").time()
+            data['startTime'] = datetime.strptime(data['startTime'][:10], "%H:%M").time()
 
         # get new Session id using Conference key as parent
         s_id = Session.allocate_ids(size=1, parent=c_key)[0]

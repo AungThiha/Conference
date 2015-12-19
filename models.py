@@ -45,6 +45,11 @@ class ProfileForm(messages.Message):
     conferenceKeysToAttend = messages.StringField(4, repeated=True)
 
 
+class ProfileForms(messages.Message):
+    """ProfileForms -- multiple Profile outbound form message"""
+    items = messages.MessageField(ProfileForm, 1, repeated=True)
+
+
 class BooleanMessage(messages.Message):
     """BooleanMessage-- outbound Boolean value message"""
     data = messages.BooleanField(1)
