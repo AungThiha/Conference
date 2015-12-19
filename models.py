@@ -126,6 +126,12 @@ class StringMessage(messages.Message):
     data = messages.StringField(1, required=True)
 
 
+class FeaturedSpeakerMessage(messages.Message):
+    """StringMessage-- outbound (single) string message"""
+    speaker = messages.StringField(1)
+    sessions = messages.StringField(2, repeated=True)
+
+
 class Session(ndb.Model):
     """Session -- Session object"""
     name = ndb.StringProperty(required=True)

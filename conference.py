@@ -12,6 +12,7 @@ created by wesc on 2014 apr 21
 from datetime import datetime
 
 import endpoints
+import json
 from protorpc import messages
 from protorpc import message_types
 from protorpc import remote
@@ -20,7 +21,7 @@ from google.appengine.api import taskqueue
 from google.appengine.ext import ndb
 from google.appengine.api import memcache
 
-from models import ConflictException, Session, SessionForms, SessionForm, ProfileForms
+from models import ConflictException, Session, SessionForms, SessionForm, ProfileForms, FeaturedSpeakerMessage
 from models import Profile
 from models import ProfileMiniForm
 from models import ProfileForm
@@ -41,6 +42,7 @@ __author__ = 'wesc+api@google.com (Wesley Chun)'
 EMAIL_SCOPE = endpoints.EMAIL_SCOPE
 API_EXPLORER_CLIENT_ID = endpoints.API_EXPLORER_CLIENT_ID
 MEMCACHE_ANNOUNCEMENTS_KEY = "RECENT_ANNOUNCEMENTS"
+MEMCACHE_FEATURED_SPEAKER_KEY = "RECENT_FEATURED_SPEAKER"
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -689,7 +691,44 @@ class ConferenceApi(remote.Service):
         # creation of Session & return SessionForm
         Session(**data).put()
 
+        taskqueue.add(params={'speaker': data['speaker'],
+                              'wcsk': wsck},
+                      url='/tasks/set_featured_speaker')
+
         return request
+
+    @staticmethod
+    def _cacheFeaturedSpeaker(speaker, wsck):
+        """When a new session is added to a conference, check the speaker.
+        If there is more than one session by this speaker at this conference,
+        also add a new Memcache entry that features the speaker and session names."""
+        # check if conf exists given websafeConfKey
+        # get conference; check that it exists
+        c_key = ndb.Key(urlsafe=wsck)
+        conf = c_key.get()
+        if not conf:
+            raise endpoints.NotFoundException(
+                'No conference found with key: %s' % wsck)
+
+        sessions = Session.query(ancestor=c_key).filter(Session.speaker == speaker).fetch()
+        if len(sessions) > 1:
+            sessions_str = ','.join('"%s"' % s.name for s in sessions)
+            featured_speaker = '{"Speaker": "%s","Sessions":[%s]}' % (speaker, sessions_str)
+            memcache.set(MEMCACHE_FEATURED_SPEAKER_KEY, featured_speaker)
+
+    @endpoints.method(message_types.VoidMessage, FeaturedSpeakerMessage,
+                      path='session/featuredspeaker/get',
+                      http_method='GET', name='getFeaturedSpeaker')
+    def getFeaturedSpeaker(self, request):
+        """Return featured speaker from memcache."""
+        featured_speaker = memcache.get(MEMCACHE_FEATURED_SPEAKER_KEY)
+        if featured_speaker:
+            json_obj = json.loads(featured_speaker)
+            retval = FeaturedSpeakerMessage(speaker=json_obj['Speaker'],
+                                            sessions=json_obj['Sessions'])
+        else:
+            retval = FeaturedSpeakerMessage()
+        return retval
 
     @endpoints.method(SessionForm, SessionForm,
                       path='sessions',
