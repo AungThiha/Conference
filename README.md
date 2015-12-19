@@ -30,4 +30,9 @@ so he/she would like to check which sessions he/she can catch up with.
 In that case, I've implemented **getSessionsAfter**.
 
 Another query is that in case user would like to know who is attending
-the conference, I've implemented **getAttenders**
+the conference, I've implemented **getAttenders**.
+
+#### Solve the following query related problem
+Question: Let’s say that you don't like workshops and you don't like sessions after 7 pm. How would you handle a query for all non-workshop sessions before 7 pm? What is the problem for implementing this query? What ways to solve it did you think of?
+
+Answer: Datastore has a limitation that it can not be used two inequality filters when query. One way to solve this is to query sessions before 7pm first and then filter it out in python code to remove sessions with a 'workshop' type.
