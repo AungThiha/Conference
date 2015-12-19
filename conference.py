@@ -93,9 +93,9 @@ SESSION_GET_BY_DATE_REQUEST = endpoints.ResourceContainer(
     date=messages.StringField(1),
 )
 
-SESSION_GET_BY_STARTTIME_REQUEST = endpoints.ResourceContainer(
+SESSION_GET_BY_TIME_REQUEST = endpoints.ResourceContainer(
     message_types.VoidMessage,
-    starttime=messages.StringField(1),
+    freetime=messages.StringField(1),
 )
 
 WISHLIST_POST_REQUEST = endpoints.ResourceContainer(
@@ -634,12 +634,12 @@ class ConferenceApi(remote.Service):
         # return set of SessionForm objects per Session
         return SessionForms(items=[self._copySessionToForm(session) for session in sessions])
 
-    @endpoints.method(SESSION_GET_BY_STARTTIME_REQUEST, SessionForms,
-                      path='/sessions/starttime/{starttime}',
-                      http_method='GET', name='getSessionsByStartTime')
-    def getSessionsByStartTime(self, request):
-        """return all sessions given by this particular date, across all conferences."""
-        sessions = Session.query().filter(Session.startTime < datetime.strptime(request.starttime, "%H:%M").time())
+    @endpoints.method(SESSION_GET_BY_TIME_REQUEST, SessionForms,
+                      path='/sessions/after/{freetime}',
+                      http_method='GET', name='getSessionsAfter')
+    def getSessionsAfter(self, request):
+        """return all sessions that hold after this particular date."""
+        sessions = Session.query().filter(Session.startTime > datetime.strptime(request.freetime, "%H,%M").time())
 
         # return set of SessionForm objects per Session
         return SessionForms(items=[self._copySessionToForm(session) for session in sessions])
@@ -678,7 +678,7 @@ class ConferenceApi(remote.Service):
         if data['date']:
             data['date'] = datetime.strptime(data['date'][:10], "%Y-%m-%d").date()
         if data['startTime']:
-            data['startTime'] = datetime.strptime(data['startTime'][:10], "%H:%M").time()
+            data['startTime'] = datetime.strptime(data['startTime'][:10], "%H,%M").time()
 
         # get new Session id using Conference key as parent
         s_id = Session.allocate_ids(size=1, parent=c_key)[0]
