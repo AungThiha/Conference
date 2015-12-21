@@ -640,7 +640,7 @@ class ConferenceApi(remote.Service):
                       path='/sessions/after/{freetime}',
                       http_method='GET', name='getSessionsAfter')
     def getSessionsAfter(self, request):
-        """return all sessions that hold after this particular date."""
+        """return all sessions that hold after this particular time."""
         sessions = Session.query().filter(Session.startTime > datetime.strptime(request.freetime, "%H,%M").time())
 
         # return set of SessionForm objects per Session
