@@ -657,6 +657,9 @@ class ConferenceApi(remote.Service):
         if not request.name:
             raise endpoints.BadRequestException("Session 'name' field required")
 
+        if not request.speaker:
+            raise endpoints.BadRequestException("Session 'speaker' field required")
+
         # check if conf exists given websafeConfKey
         # get conference; check that it exists
         wsck = request.websafeConferenceKey
