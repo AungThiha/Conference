@@ -757,16 +757,16 @@ class ConferenceApi(remote.Service):
 
         if add:
             # check if the user already added the session to wishlist
-            if wssk in prof.sessionKeysInWishlist:
+            if s_key in prof.sessionKeysInWishlist:
                 raise endpoints.BadRequestException(
                     'You have already added this session to your Whishlist')
             else:
                 # append the session key to user's sessionInWishlist
-                prof.sessionKeysInWishlist.append(wssk)
+                prof.sessionKeysInWishlist.append(s_key)
                 retval = True
-        elif wssk in prof.sessionKeysInWishlist:
+        elif s_key in prof.sessionKeysInWishlist:
             # remove the session key to user's sessionInWishlist
-            prof.sessionKeysInWishlist.remove(wssk)
+            prof.sessionKeysInWishlist.remove(s_key)
             retval = True
 
         # write things back to the datastore & return
@@ -792,8 +792,7 @@ class ConferenceApi(remote.Service):
             raise endpoints.UnauthorizedException('Authorization required')
 
         prof = self._getProfileFromUser()  # get user Profile
-        session_keys = [ndb.Key(urlsafe=wssk) for wssk in prof.sessionKeysInWishlist]
-        sessions = [session_key.get() for session_key in session_keys]
+        sessions = [session_key.get() for session_key in prof.sessionKeysInWishlist]
 
         # return set of SessionForm objects per Session in wishlist
         return SessionForms(
