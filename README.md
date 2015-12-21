@@ -27,7 +27,7 @@ Open up your terminal or command prompt and enter the following command to downl
 * $ git clone git@github.com:AungThiha/Conference.git
 
 
-### How To run the application
+### How To run the application locally
 Open up your terminal or command prompt and run the command below:<br>
 * $ dev_appserver.py .
 
