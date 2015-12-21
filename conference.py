@@ -97,7 +97,8 @@ SESSION_GET_BY_DATE_REQUEST = endpoints.ResourceContainer(
 
 SESSION_GET_BY_TIME_REQUEST = endpoints.ResourceContainer(
     message_types.VoidMessage,
-    freetime=messages.StringField(1),
+    date=messages.StringField(1),
+    freetime=messages.StringField(2),
 )
 
 WISHLIST_POST_REQUEST = endpoints.ResourceContainer(
@@ -637,11 +638,14 @@ class ConferenceApi(remote.Service):
         return SessionForms(items=[self._copySessionToForm(session) for session in sessions])
 
     @endpoints.method(SESSION_GET_BY_TIME_REQUEST, SessionForms,
-                      path='/sessions/after/{freetime}',
+                      path='/sessions/date/{date}/after/{freetime}',
                       http_method='GET', name='getSessionsAfter')
     def getSessionsAfter(self, request):
-        """return all sessions that hold after this particular time."""
-        sessions = Session.query().filter(Session.startTime > datetime.strptime(request.freetime, "%H,%M").time())
+        """return all sessions that hold
+        after this particular time at this particular date."""
+        sessions = Session.query()\
+            .filter(Session.date == datetime.strptime(request.date[:10], "%Y-%m-%d").date())\
+            .filter(Session.startTime > datetime.strptime(request.freetime, "%H,%M").time())
 
         # return set of SessionForm objects per Session
         return SessionForms(items=[self._copySessionToForm(session) for session in sessions])
