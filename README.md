@@ -64,7 +64,7 @@ so he/she would like to check which sessions he/she can catch up with.
 In that case, I've implemented **getSessionsAfter**.<br>
 To use this endpoint, user need to pass *date* and *freetime*.
 * *date* is the Date user want to check on. It should be with the format of "%Y-%m-%d" (For example, "2015-12-28").
-* *freetime* is the time the user would start to be free. It should be with the format of "%H,%M" (For example, "4,45").
+* *freetime* is the time the user would start to be free. It should be with the format of "%H,%M" (For example, "4,45").<br>
 P.S. I use "%H,%M" instead of "%H:%M" to avoid url encoding for that specific part when passing it in as a parameter to make request using Google API Explorer.
 
 Another query is that in case user would like to know who is attending
