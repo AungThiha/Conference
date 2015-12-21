@@ -11,6 +11,7 @@ The project consists of:<br>
 * User's Wishlist
 * Implementing API end points
 * Authentication and authorization
+* Creating Push Queue and Cron Job
 
 The app is deployed on google cloud platform at https://conference-1151.appspot.com/
 
