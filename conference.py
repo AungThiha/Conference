@@ -792,7 +792,7 @@ class ConferenceApi(remote.Service):
             raise endpoints.UnauthorizedException('Authorization required')
 
         prof = self._getProfileFromUser()  # get user Profile
-        sessions = [session_key.get() for session_key in prof.sessionKeysInWishlist]
+        sessions = ndb.get_multi(prof.sessionKeysInWishlist)
 
         # return set of SessionForm objects per Session in wishlist
         return SessionForms(
