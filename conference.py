@@ -699,24 +699,16 @@ class ConferenceApi(remote.Service):
         Session(**data).put()
 
         taskqueue.add(params={'speaker': data['speaker'],
-                              'wcsk': wsck},
+                              'c_key': c_key},
                       url='/tasks/set_featured_speaker')
 
         return self._copySessionToForm(s_key.get())
 
     @staticmethod
-    def _cacheFeaturedSpeaker(speaker, wsck):
+    def _cacheFeaturedSpeaker(speaker, c_key):
         """When a new session is added to a conference, check the speaker.
         If there is more than one session by this speaker at this conference,
         also add a new Memcache entry that features the speaker and session names."""
-        # check if conf exists given websafeConfKey
-        # get conference; check that it exists
-        c_key = ndb.Key(urlsafe=wsck)
-        conf = c_key.get()
-        if not conf:
-            raise endpoints.NotFoundException(
-                'No conference found with key: %s' % wsck)
-
         sessions = Session.query(ancestor=c_key).filter(Session.speaker == speaker).fetch()
         if len(sessions) > 1:
             sessions_str = ','.join('"%s"' % s.name for s in sessions)

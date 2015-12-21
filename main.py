@@ -43,8 +43,8 @@ class SetFeaturedSpeakerHandler(webapp2.RequestHandler):
     def post(self):
         """Set Featured Speaker in Memcache."""
         speaker = self.request.get('speaker')
-        wcsk = self.request.get('wcsk')
-        ConferenceApi._cacheFeaturedSpeaker(speaker, wcsk)
+        c_key = self.request.get('c_key')
+        ConferenceApi._cacheFeaturedSpeaker(speaker, c_key)
         self.response.set_status(204)
 
 
