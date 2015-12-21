@@ -15,10 +15,44 @@ The project consists of:<br>
 The app is deployed on google cloud platform at https://conference-1151.appspot.com/
 
 
+### Requirements
+* Python 2.7
+* Google App Engine SDK for Python
+* Git
+* Terminal or command prompt
+
+
+### How to download
+Open up your terminal or command prompt and enter the following command to download
+* $ git clone git@github.com:AungThiha/Conference.git
+
+
+### How To run the application
+Open up your terminal or command prompt and run the command below:<br>
+* $ dev_appserver.py .
+
+
 ### Task 1: Add Sessions to a Conference
 
 #### Explain your design choices
-Speaker is defined as a StringProperty to avoid the need create a separate speaker entity.
+I created session model with the following datastore properties:
+```
+class Session(ndb.Model):
+    """Session -- Session object"""
+    name = ndb.StringProperty(required=True)
+    highlights = ndb.StringProperty()
+    speaker = ndb.StringProperty(required=True)
+    duration = ndb.IntegerProperty()
+    typeOfSession = ndb.StringProperty(repeated=True)
+    date = ndb.DateProperty()
+    startTime = ndb.TimeProperty()
+```
+* Since a session without a name and a speaker wouldn't make sense, I implemented **name** and **speaker** as **required** fields.<br>
+* **Speaker** is defined as a **String** property to avoid the need to create a separate speaker entity/kind.<br>
+* **Duration** is better to be saved in Integer Value, so that we do not need to type cast when we need to make some calculation with it.
+So, I implemented **duration** as **Integer** property.<br>
+* Session may belong to many types. For example, a session about *Python* belongs to two types that are *Technology* and *Programming Languages*.
+So, I implemented **typeOfSession** as **repeated** property.
 
 
 ### Task 3: Work on indexes and queries
