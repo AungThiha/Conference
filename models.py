@@ -22,42 +22,13 @@ class ConflictException(endpoints.ServiceException):
     http_status = httplib.CONFLICT
 
 
-class Session(ndb.Model):
-    """Session -- Session object"""
-    name = ndb.StringProperty(required=True)
-    highlights = ndb.StringProperty()
-    speaker = ndb.StringProperty(required=True)
-    duration = ndb.IntegerProperty()
-    typeOfSession = ndb.StringProperty(repeated=True)
-    date = ndb.DateProperty()
-    startTime = ndb.TimeProperty()
-
-
-class SessionForm(messages.Message):
-    """SessionForm -- Session outbound form message"""
-    name = messages.StringField(1)
-    highlights = messages.StringField(2)
-    speaker = messages.StringField(3)
-    duration = messages.IntegerField(4)
-    typeOfSession = messages.StringField(5, repeated=True)
-    date = messages.StringField(6)
-    startTime = messages.StringField(7)
-    websafeKey = messages.StringField(8)
-    websafeConferenceKey = messages.StringField(9)
-
-
-class SessionForms(messages.Message):
-    """SessionForms -- multiple Session outbound form message"""
-    items = messages.MessageField(SessionForm, 1, repeated=True)
-
-
 class Profile(ndb.Model):
     """Profile -- User profile object"""
     displayName = ndb.StringProperty()
     mainEmail = ndb.StringProperty()
     teeShirtSize = ndb.StringProperty(default='NOT_SPECIFIED')
     conferenceKeysToAttend = ndb.StringProperty(repeated=True)
-    sessionKeysInWishlist = ndb.KeyProperty(kind=Session, repeated=True)
+    sessionKeysInWishlist = ndb.KeyProperty(kind='Session', repeated=True)
 
 
 class ProfileMiniForm(messages.Message):
@@ -136,6 +107,35 @@ class TeeShirtSize(messages.Enum):
     XXL_W = 13
     XXXL_M = 14
     XXXL_W = 15
+
+
+class Session(ndb.Model):
+    """Session -- Session object"""
+    name = ndb.StringProperty(required=True)
+    highlights = ndb.StringProperty()
+    speaker = ndb.StringProperty(required=True)
+    duration = ndb.IntegerProperty()
+    typeOfSession = ndb.StringProperty(repeated=True)
+    date = ndb.DateProperty()
+    startTime = ndb.TimeProperty()
+
+
+class SessionForm(messages.Message):
+    """SessionForm -- Session outbound form message"""
+    name = messages.StringField(1)
+    highlights = messages.StringField(2)
+    speaker = messages.StringField(3)
+    duration = messages.IntegerField(4)
+    typeOfSession = messages.StringField(5, repeated=True)
+    date = messages.StringField(6)
+    startTime = messages.StringField(7)
+    websafeKey = messages.StringField(8)
+    websafeConferenceKey = messages.StringField(9)
+
+
+class SessionForms(messages.Message):
+    """SessionForms -- multiple Session outbound form message"""
+    items = messages.MessageField(SessionForm, 1, repeated=True)
 
 
 class ConferenceQueryForm(messages.Message):
