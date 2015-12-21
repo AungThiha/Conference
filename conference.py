@@ -698,7 +698,7 @@ class ConferenceApi(remote.Service):
                               'wcsk': wsck},
                       url='/tasks/set_featured_speaker')
 
-        return request
+        return self._copySessionToForm(s_key.get())
 
     @staticmethod
     def _cacheFeaturedSpeaker(speaker, wsck):
