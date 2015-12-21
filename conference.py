@@ -593,7 +593,7 @@ class ConferenceApi(remote.Service):
         return SessionForms(items=[self._copySessionToForm(session) for session in sessions])
 
     @endpoints.method(SESSION_GET_REQUEST, SessionForms,
-                      path='conference/{websafeConferenceKey}/sessions/{typeOfSession}',
+                      path='conference/{websafeConferenceKey}/sessions/type/{typeOfSession}',
                       http_method='GET', name='getConferenceSessionsByType')
     def getConferenceSessionsByType(self, request):
         """return all sessions of a specified type (eg lecture, keynote, workshop)."""
