@@ -61,12 +61,20 @@ So, I implemented **typeOfSession** as **repeated** property.
 Say user would like to attend session when he/she free 
 and he/she would be free only after a specific time, 
 so he/she would like to check which sessions he/she can catch up with. 
-In that case, I've implemented **getSessionsAfter**.
+In that case, I've implemented **getSessionsAfter**.<br>
+To use this endpoint, user need to pass *date* and *freetime*.
+* *date* is the Date user want to check on. It should be with the format of "%Y-%m-%d" (For example, "2015-12-28").
+* *freetime* is the time the user would start to be free. It should be with the format of "%H,%M" (For example, "4,45").
+P.S. I use "%H,%M" instead of "%H:%M" to avoid url encoding for that specific part when passing it in as a parameter to make request using Google API Explorer.
 
 Another query is that in case user would like to know who is attending
-the conference, I've implemented **getAttenders**.
+the conference, I've implemented **getAttenders**.<br>
+To use this endpoint, user need to pass *websafeConferenceKey*. 
+It is just url safe version of the key of the conference. 
+It can be obtained using Datastore Viewer or querying using Google API Explorer. 
+
 
 #### Solve the following query related problem
 Question: Let’s say that you don't like workshops and you don't like sessions after 7 pm. How would you handle a query for all non-workshop sessions before 7 pm? What is the problem for implementing this query? What ways to solve it did you think of?
 
-Answer: Datastore has a limitation that it can not be used two inequality filters when query. One way to solve this is to query sessions before 7pm first and then filter it out in python code to remove sessions with a 'workshop' type.
+Answer: Datastore has a limitation that inequality filters on multiple fields is not supported. One way to solve this is to query sessions before 7pm first and then filter it out in python code to remove sessions with a 'workshop' type.
